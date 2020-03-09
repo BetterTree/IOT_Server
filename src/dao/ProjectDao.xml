@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dao.ProjectDao">
+	<insert id="add" parameterType="Project" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO T_PROJECT (CODE,NAME,USER_id,REMARK,NOTE) VALUES (
+			#{code},#{name},
+			<choose>
+				<when test="user != null and user.id != null">
+					#{user.id},
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+			#{remark},#{note}
+		)
+	</insert>
+	<delete id="delete" parameterType="Long">
+		DELETE FROM T_PROJECT WHERE id=#{id}
+	</delete>
+	<update id="update" parameterType="Project">
+		UPDATE T_PROJECT
+		<set>
+			id=id,
+			<if test="code != null and code != ''">
+				CODE=#{code},
+			</if>
+			<if test="name != null and name != ''">
+				NAME=#{name},
+			</if>
+			<if test="remark != null">
+				REMARK=#{remark},
+			</if>
+			<if test="user != null and user.id != null">
+				USER_id=#{user.id},
+			</if>
+		</set>
+		WHERE id=#{id}
+	</update>
+	<sql id="selectClause">
+		SELECT P.id PID,P.CODE PCODE,P.NAME PNAME,P.REMARK PREMARK,P.NOTE PNOTE,
+			P.UPDATE_TIME PUPDATE_TIME,
+			U.id UID,U.USER_ID UUSER_ID,U.USER_NAME UUSER_NAME,U.USER_TEL UUSER_TEL,
+			U.USER_TYPE UUSER_TYPE,U.GENDER UGENDER,U.CITY UCITY,U.BIRTHDAY UBIRTHDAY,
+			U.USER_EMAIL UUSER_EMAIL,U.SCHOOL USCHOOL,U.GRADE UGRADE,
+			U.HABIT UHABIT,U.IM_ACCOUNT UIM_ACCOUNT,U.UPDATE_TIME UUPDATE_TIME
+	</sql>
+	<sql id="tableClause">
+		FROM T_PROJECT P
+		INNER JOIN T_USER U ON P.USER_id=U.id
+	</sql>
+	<sql id="deepSelectClause">
+		SELECT P.id PID,P.CODE PCODE,P.NAME PNAME,P.REMARK PREMARK,P.NOTE PNOTE,
+			P.UPDATE_TIME PUPDATE_TIME,
+			U.id UID,U.USER_ID UUSER_ID,U.USER_NAME UUSER_NAME,U.USER_TEL UUSER_TEL,
+			U.USER_TYPE UUSER_TYPE,U.GENDER UGENDER,U.CITY UCITY,U.BIRTHDAY UBIRTHDAY,
+			U.USER_EMAIL UUSER_EMAIL,U.SCHOOL USCHOOL,U.GRADE UGRADE,
+			U.HABIT UHABIT,U.IM_ACCOUNT UIM_ACCOUNT,U.UPDATE_TIME UUPDATE_TIME,
+			W.id WID,W.CODE WCODE,W.NAME WNAME,W.TYPE WTYPE,W.ENABLE WENABLE,
+			W.VISIBLE WVISIBLE,W.POSITION_X WPOSITION_X,W.POSITION_Y WPOSITION_Y,
+			W.WIDTH WWIDTH,W.HEIGHT WHEIGHT,
+			V.id VID,V.CODE VCODE,V.NAME VNAME,V.VALUE VVALUE,V.UNIT VUNIT,V.TYPE VTYPE,
+			V.AIM VAIM,I.id IID,I.VI_KEY IKEY, I.VI_VALUE IVALUE,
+			D.id DID,D.CODE DCODE,D.NAME DNAME,D.TYPE DTYPE,D.STATUS DSTATUS,
+			D.STATUS_NAME DSTATUS_NAME,D.ONLINE_TIME DONLINE_TIME
+	</sql>
+	<sql id="deepQueryTableClause">
+		FROM T_PROJECT P
+		INNER JOIN T_USER U ON P.USER_id=U.id
+		LEFT JOIN T_WIDGET W ON P.id=W.PROJECT_id
+		LEFT JOIN T_VARIABLE V ON W.id=V.WIDGET_id
+		LEFT JOIN T_VALUE_ITEM I ON V.id=I.VARIABLE_id
+		LEFT JOIN T_DEVICE D ON P.id=D.PROJECT_id
+	</sql>
+	<sql id="whereClause">
+		<where>
+			<if test="id != null">
+				AND P.id=#{id}
+			</if>
+			<if test="code != null and code != ''">
+				AND P.CODE=#{code}
+			</if>
+			<if test="user_id != null">
+				AND P.USER_id=#{user_id}
+			</if>
+			<if test="name != null and name != ''">
+				AND P.NAME LIKE CONCAT('%', #{name}, '%')
+			</if>
+		</where>
+	</sql>
+	<select id="getAllProjects" resultMap="getProjectsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		ORDER BY P.UPDATE_TIME DESC
+	</select>
+	<select id="getTableCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(1)
+		<include refid="tableClause" />
+		<include refid="whereClause" />
+		ORDER BY P.UPDATE_TIME DESC
+	</select>
+	<select id="getProjects" parameterType="map" resultMap="getProjectsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		<include refid="whereClause" />
+		ORDER BY P.UPDATE_TIME DESC
+		<include refid="dao.PagingDao.paging" />
+	</select>
+	<select id="getProjectInfo" parameterType="map" resultMap="getDeepProjectMap">
+		<include refid="deepSelectClause" />
+		<include refid="deepQueryTableClause" />
+		<include refid="whereClause" />
+	</select>
+	<select id="getProjectInfoById" parameterType="map" resultMap="getDeepProjectMap">
+		<include refid="deepSelectClause" />
+		<include refid="deepQueryTableClause" />
+		WHERE P.id=#{id}
+		ORDER BY W.POSITION_X ASC
+	</select>
+	<select id="getProjectById" parameterType="Long" resultMap="getProjectsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		WHERE P.id=#{id}
+	</select>
+	<resultMap id="getProjectsMap" type="Project">
+		<id property="id" column="PID" />
+		<result property="code" column="PCODE" />
+		<result property="name" column="PNAME" />
+		<result property="remark" column="PREMARK" />
+		<result property="note" column="PNOTE" />
+		<result property="updateTime" column="PUPDATE_TIME" />
+		<association property="user" javaType="User">
+			<id property="id" column="UID" />
+			<result property="userId" column="UUSER_ID" />
+			<result property="userName" column="UUSER_NAME" />
+			<result property="userTel" column="UUSER_TEL" />
+			<result property="userType" column="UUSER_TYPE" />
+			<result property="gender" column="UGENDER" />
+			<result property="city" column="UCITY" />
+			<result property="birthday" column="UBIRTHDAY" />
+			<result property="userEmail" column="UUSER_EMAIL" />
+			<result property="school" column="USCHOOL" />
+			<result property="grade" column="UGRADE" />
+			<result property="habit" column="UHABIT" />
+			<result property="imAccount" column="UIM_ACCOUNT" />
+			<result property="updateTime" column="UUPDATE_TIME" />
+		</association>
+	</resultMap>
+	<resultMap id="getDeepProjectMap" type="Project">
+		<id property="id" column="PID" />
+		<result property="code" column="PCODE" />
+		<result property="name" column="PNAME" />
+		<result property="remark" column="PREMARK" />
+		<result property="note" column="PNOTE" />
+		<result property="updateTime" column="PUPDATE_TIME" />
+		<association property="user" javaType="User">
+			<id property="id" column="UID" />
+			<result property="userId" column="UUSER_ID" />
+			<result property="userName" column="UUSER_NAME" />
+			<result property="userTel" column="UUSER_TEL" />
+			<result property="userType" column="UUSER_TYPE" />
+			<result property="gender" column="UGENDER" />
+			<result property="city" column="UCITY" />
+			<result property="birthday" column="UBIRTHDAY" />
+			<result property="userEmail" column="UUSER_EMAIL" />
+			<result property="school" column="USCHOOL" />
+			<result property="grade" column="UGRADE" />
+			<result property="habit" column="UHABIT" />
+			<result property="imAccount" column="UIM_ACCOUNT" />
+			<result property="updateTime" column="UUPDATE_TIME" />
+		</association>
+		<collection property="widgets" ofType="Widget">
+			<id property="id" column="WID" />
+			<result property="code" column="WCODE" />
+			<result property="name" column="WNAME" />
+			<result property="type" column="WTYPE" />
+			<result property="enable" column="WENABLE" />
+			<result property="visible" column="WVISIBLE" />
+			<result property="positionX" column="WPOSITION_X" />
+			<result property="positionY" column="WPOSITION_Y" />
+			<result property="width" column="WWIDTH" />
+			<result property="height" column="WHEIGHT" />
+			<collection property="variables" ofType="Variable">
+				<id property="id" column="VID" />
+				<result property="code" column="VCODE" />
+				<result property="name" column="VNAME" />
+				<result property="value" column="VVALUE" />
+				<result property="unit" column="VUNIT" />
+				<result property="type" column="VTYPE" />
+				<result property="aim" column="VAIM" />
+				<collection property="valueItems" ofType="ValueItem">
+					<id property="id" column="IID" />
+					<result property="key" column="IKEY" />
+					<result property="value" column="IVALUE" />
+				</collection>
+			</collection>
+		</collection>
+		<collection property="devices" ofType="Device">
+			<id property="id" column="DID" />
+			<result property="code" column="DCODE" />
+			<result property="name" column="DNAME" />
+			<result property="type" column="DTYPE" />
+			<result property="onlineTime" column="DONLINE_TIME" />
+		</collection>
+	</resultMap>
+</mapper>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dao.UserDao">
+	<insert id="add" parameterType="User" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO T_USER (
+			USER_ID,USER_PWD,USER_NAME,USER_TEL,USER_TYPE,GENDER,CITY,BIRTHDAY,
+			USER_EMAIL,SCHOOL,GRADE,HABIT,IM_ACCOUNT,QUESTION,ANSWER,USER_PHOTO
+		) VALUES (
+			#{userId},#{userPwd},#{userName},#{userTel},#{userType},
+			#{gender},#{city},#{birthday},#{userEmail},#{school},#{grade},
+			#{habit},#{imAccount},#{question},#{answer},#{userPhoto}
+		)
+	</insert>
+	<delete id="delete" parameterType="Long">
+		DELETE FROM T_USER WHERE id=#{id}
+	</delete>
+	<update id="update" parameterType="User">
+		UPDATE T_USER
+		<set>
+			id=id,
+			<if test="userName != null and userName != ''">
+				USER_NAME=#{userName},
+			</if>
+			<if test="userTel != null and userTel != ''">
+				USER_TEL=#{userTel},
+			</if>
+			<if test="userType != null">
+				USER_TYPE=#{userType},
+			</if>
+			<if test="gender != null and gender != ''">
+				GENDER=#{gender},
+			</if>
+			<if test="city != null and city != ''">
+				CITY=#{city},
+			</if>
+			<if test="birthday != null">
+				BIRTHDAY=#{birthday},
+			</if>
+			<if test="userEmail != null and userEmail != ''">
+				USER_EMAIL=#{userEmail},
+			</if>
+			<if test="school != null and school != ''">
+				SCHOOL=#{school},
+			</if>
+			<if test="grade != null and grade != ''">
+				GRADE=#{grade},
+			</if>
+			<if test="habit != null and habit != ''">
+				HABIT=#{habit},
+			</if>
+			<if test="imAccount != null and imAccount != ''">
+				IM_ACCOUNT=#{imAccount},
+			</if>
+			<if test="question != null and question != ''">
+				QUESTION=#{question},
+			</if>
+			<if test="answer != null and answer != ''">
+				ANSWER=#{answer},
+			</if>
+			<if test="userPhoto != null and userPhoto != ''">
+				USER_PHOTO=#{userPhoto},
+			</if>
+		</set>
+		WHERE id=#{id}
+	</update>
+	
+	<update id="chgPwd" parameterType="User">
+		UPDATE T_USER SET USER_PWD=#{userPwd} WHERE id=#{id}
+	</update>
+	
+	<sql id="selectClause">
+		SELECT A.id USER_ID,A.USER_ID USER_UID,A.USER_PWD,A.USER_NAME,
+			A.USER_TEL,A.USER_TYPE,A.GENDER USER_GENDER,A.CITY USER_CITY,
+			A.BIRTHDAY USER_BIRTHDAY,A.USER_EMAIL,A.SCHOOL USER_SCHOOL,
+			A.GRADE USER_GRADE,A.HABIT USER_HABIT,A.IM_ACCOUNT USER_IM_ACCOUNT,
+			A.QUESTION USER_QUESTION,A.ANSWER USER_ANSWER,
+			A.USER_PHOTO,A.UPDATE_TIME USER_UPDATE_TIME
+	</sql>
+	<sql id="tableClause">
+		FROM T_USER A
+	</sql>
+	<sql id="whereClause">
+		<where>
+			<choose>
+				<when test="id != null">
+					AND A.id=#{id}
+				</when>
+				<when test="userId != null and userId != ''">
+					AND A.USER_ID=#{userId}
+				</when>
+				<otherwise>
+					<if test="userName != null and userName != ''">
+						AND A.USER_NAME LIKE CONCAT('%', #{userName}, '%')
+					</if>
+					<if test="userType != null">
+						AND A.USER_TYPE=#{userType}
+					</if>
+					<if test="gender != null and gender != ''">
+						AND A.GENDER=#{gender}
+					</if>
+					<if test="city != null and city != ''">
+						AND A.CITY LIKE CONCAT('%', #{city}, '%')
+					</if>
+					<if test="school != null and school != ''">
+						AND A.SCHOOL LIKE CONCAT('%', #{school}, '%')
+					</if>
+					<if test="grade != null and grade != ''">
+						AND A.GRADE LIKE CONCAT('%', #{grade}, '%')
+					</if>
+					<if test="imAccount != null and imAccount != ''">
+						AND A.IM_ACCOUNT LIKE CONCAT('%', #{imAccount}, '%')
+					</if>
+				</otherwise>
+			</choose>
+		</where>
+	</sql>
+	<select id="getAllUsers" resultMap="getUsersMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+	</select>
+	<select id="getTableCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(1)
+		<include refid="tableClause" />
+		<include refid="whereClause" />
+	</select>
+	<select id="getUsers" parameterType="map" resultMap="getUsersMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		<include refid="whereClause" />
+		<include refid="dao.PagingDao.paging" />
+	</select>
+	
+	<select id="login" parameterType="User" resultMap="getLoginMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		<where>
+			<choose>
+				<when test="id != null">
+					A.id=#{id}
+				</when>
+				<when test="userId != null and userId != ''">
+					A.USER_ID=#{userId}
+				</when>
+			</choose>
+		</where>
+		LIMIT 1
+	</select>
+	<resultMap id="getUsersMap" type="User">
+		<id property="id" column="USER_ID" />
+		<result property="userId" column="USER_UID" />
+		<result property="userName" column="USER_NAME" />
+		<result property="userTel" column="USER_TEL" />
+		<result property="userType" column="USER_TYPE" />
+		<result property="gender" column="USER_GENDER" />
+		<result property="city" column="USER_CITY" />
+		<result property="birthday" column="USER_BIRTHDAY" />
+		<result property="userEmail" column="USER_EMAIL" />
+		<result property="school" column="USER_SCHOOL" />
+		<result property="grade" column="USER_GRADE" />
+		<result property="habit" column="USER_HABIT" />
+		<result property="imAccount" column="USER_IM_ACCOUNT" />
+		<result property="question" column="USER_QUESTION" />
+		<result property="answer" column="USER_ANSWER" />
+		<result property="userPhoto" column="USER_PHOTO" />
+		<result property="updateTime" column="USER_UPDATE_TIME" />
+	</resultMap>
+	<resultMap id="getLoginMap" type="User">
+		<id property="id" column="USER_ID" />
+		<result property="userId" column="USER_UID" />
+		<result property="userPwd" column="USER_PWD" />
+		<result property="userName" column="USER_NAME" />
+		<result property="userTel" column="USER_TEL" />
+		<result property="userType" column="USER_TYPE" />
+		<result property="gender" column="USER_GENDER" />
+		<result property="city" column="USER_CITY" />
+		<result property="birthday" column="USER_BIRTHDAY" />
+		<result property="userEmail" column="USER_EMAIL" />
+		<result property="school" column="USER_SCHOOL" />
+		<result property="grade" column="USER_GRADE" />
+		<result property="habit" column="USER_HABIT" />
+		<result property="imAccount" column="USER_IM_ACCOUNT" />
+		<result property="question" column="USER_QUESTION" />
+		<result property="answer" column="USER_ANSWER" />
+		<result property="userPhoto" column="USER_PHOTO" />
+		<result property="updateTime" column="USER_UPDATE_TIME" />
+	</resultMap>
+</mapper>
