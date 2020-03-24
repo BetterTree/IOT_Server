@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+	<!-- 读取配置文件，以下两种方式可以按需选择一种，若不配，也可以通过写java全局属性的方式让db处理方通过${}获取信息 -->
+	<!-- 以默认处理方式读取db.properties -->
+	<!--
+	<context:property-placeholder location="classpath:db.properties,classpath:global.properties" />
+	-->
+	<!-- 以自定义处理方式读取db.properties，当属性名称以_enc结尾表示密文，会触发解密 -->
+	<bean id="propertyConfigurer" class="com.irandoo.ssm.conf.RandooPropertyPlaceholderConfigurer">  
+        <property name="order" value="1" />
+        <property name="ignoreUnresolvablePlaceholders" value="true" />
+        <property name="locations">
+        		<list>
+        			<value>classpath:db.properties</value>
+        			<value>classpath:global.properties</value>
+        		</list>
+        </property>
+        <property name="fileEncoding">
+     		<value>UTF-8</value>
+   		</property>
+    </bean>
+	<!-- 定义Globalbean -->
+	<bean id="global" class="com.irandoo.ssm.conf.Global">
+		<property name="sessionExpire" value="${global.sessionExpire}" />
+		<property name="skipLogin4Debug" value="${global.skipLogin4Debug_enc}" />
+		<property name="wechatAppId" value="${global.wechatAppId}" />
+		<property name="wechatSecret" value="${global.wechatSecret}" />
+		<property name="appUrl" value="${global.appUrl}" />
+	</bean>
+	<!-- 配置数据源 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+		<!-- 数据库驱动 -->
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<!-- 数据库url -->
+		<property name="url" value="${jdbc.url}" />
+		<!-- 数据库用户名 -->
+		<property name="username" value="${jdbc.username}" />
+		<!-- 数据库密码 -->
+		<property name="password" value="${jdbc.password_enc}" />
+		<!-- 最大连接数 -->
+		<property name="maxTotal" value="${jdbc.maxTotal}" />
+		<!-- 最大空闲连接 -->
+		<property name="maxIdle" value="${jdbc.maxIdle}" />
+		<!-- 初始化连接数 -->
+		<property name="initialSize" value="${jdbc.initialSize}" />
+	</bean>
+	<!-- 事务管理器，依赖于数据源 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<!-- 开启事务注解 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<!-- 配置MyBatis工厂SqlSessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 注入数据源 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 指定MyBatis核心配置文件位置 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<property name="typeAliasesPackage" value="com.irandoo.ssm.po" />
+	</bean>
+	<!-- 配置mapper扫描器 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.irandoo.ssm.dao;dao" />
+	</bean>
+	<!-- 扫描service -->
+	<context:component-scan base-package="com.irandoo.ssm.service,service" />
+</beans>

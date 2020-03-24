@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dao.ValueItemDao">
+	<insert id="add" parameterType="ValueItem" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO T_VALUE_ITEM (VI_KEY,VI_VALUE,VARIABLE_id)
+		 VALUES (
+		 	#{key},#{value},
+		 	<choose>
+		 		<when test="variable != null and variable.id != null">
+		 			#{variable.id}
+		 		</when>
+		 		<otherwise>
+		 			NULL
+		 		</otherwise>
+		 	</choose>
+		 )
+	</insert>
+	<delete id="delete" parameterType="Long">
+		DELETE FROM T_VALUE_ITEM WHERE id=#{id}
+	</delete>
+	<delete id="deleteByVariable" parameterType="Long">
+		DELETE FROM T_VALUE_ITEM WHERE VARIABLE_id=#{id}
+	</delete>
+	<delete id="deleteByWidget" parameterType="Long">
+		DELETE FROM T_VALUE_ITEM WHERE VARIABLE_id IN
+		 (SELECT id FROM T_VARIABLE WHERE WIDGET_id=#{id})
+	</delete>
+	<delete id="deleteByProject" parameterType="Long">
+		DELETE FROM T_VALUE_ITEM WHERE VARIABLE_id IN
+		 (SELECT id FROM T_VARIABLE WHERE WIDGET_id IN
+		  (SELECT id FROM T_WIDGET WHERE PROJECT_id=#{id}))
+	</delete>
+	<update id="update" parameterType="ValueItem">
+		UPDATE T_VALUE_ITEM
+		<set>
+			id=id,
+			<if test="key != null and key != ''">
+				VI_KEY=#{key},
+			</if>
+			<if test="value != null and value != ''">
+				VI_VALUE=#{value},
+			</if>
+			<if test="variable != null and variable.id != null">
+				VARIABLE_id=#{variable.id},
+			</if>
+		</set>
+		WHERE id=#{id}
+	</update>
+	<sql id="selectClause">
+		SELECT A.id IID,A.VI_KEY IKEY,A.VI_VALUE IVALUE
+	</sql>
+	<sql id="tableClause">
+		FROM T_VALUE_ITEM A
+	</sql>
+	<sql id="whereClause">
+		<where>
+			<choose>
+				<when test="id != null">
+					AND A.id=#{id}
+				</when>
+				<otherwise>
+					<if test="key != null and key != ''">
+						AND A.VI_KEY LIKE CONCAT('%', #{key}, '%')
+					</if>
+					<if test="value != null and value != ''">
+						AND A.VI_VALUE LIKE CONCAT('%', #{value}, '%')
+					</if>
+					<if test="variable_id != null">
+						AND A.VARIABLE_id=#{variable_id}
+					</if>
+				</otherwise>
+			</choose>
+		</where>
+	</sql>
+	<select id="getAllValueItems" resultMap="getValueItemsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+	</select>
+	<select id="getTableCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(1)
+		<include refid="tableClause" />
+		<include refid="whereClause" />
+	</select>
+	<select id="getValueItems" parameterType="map" resultMap="getValueItemsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		<include refid="whereClause" />
+		<include refid="dao.PagingDao.paging" />
+	</select>
+	<resultMap id="getValueItemsMap" type="ValueItem">
+		<id property="id" column="IID" />
+		<result property="key" column="IKEY" />
+		<result property="value" column="IVALUE" />
+	</resultMap>
+</mapper>

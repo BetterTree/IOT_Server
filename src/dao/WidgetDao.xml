@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dao.WidgetDao">
+	<insert id="add" parameterType="Widget" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO T_WIDGET (CODE,NAME,TYPE,
+			<if test="enable != null">
+				ENABLE,
+			</if>
+			<if test="visible != null">
+				VISIBLE,
+			</if>
+			POSITION_X,POSITION_Y,WIDTH,HEIGHT,PROJECT_id)
+		VALUES (
+		 	#{code},#{name},#{type},
+		 	<if test="enable != null">
+		 		#{enable},
+		 	</if>
+		 	<if test="visible != null">
+		 		#{visible},
+		 	</if>
+		 	#{positionX},#{positionY},#{width},#{height},
+		 	<choose>
+		 		<when test="project != null and project.id != null">
+		 			#{project.id}
+		 		</when>
+		 		<otherwise>
+		 			NULL
+		 		</otherwise>
+		 	</choose>
+		 )
+	</insert>
+	<delete id="delete" parameterType="Long">
+		DELETE FROM T_WIDGET WHERE id=#{id}
+	</delete>
+	<delete id="deleteByProject" parameterType="Long">
+		DELETE FROM T_WIDGET WHERE PROJECT_id=#{id}
+	</delete>
+	<update id="update" parameterType="Widget">
+		UPDATE T_WIDGET
+		<set>
+			id=id,
+			<if test="code != null and code != ''">
+				CODE=#{code},
+			</if>
+			<if test="name != null and name != ''">
+				NAME=#{name},
+			</if>
+			<if test="type != null">
+				TYPE=#{type},
+			</if>
+			<if test="enable != null">
+				ENABLE=#{enable},
+			</if>
+			<if test="visible != null">
+				VISIBLE=#{visible},
+			</if>
+			<if test="positionX != null">
+				POSITION_X=#{positionX},
+			</if>
+			<if test="positionY != null">
+				POSITION_Y=#{positionY},
+			</if>
+			<if test="width != null">
+				WIDTH=#{width},
+			</if>
+			<if test="height != null">
+				HEIGHT=#{height},
+			</if>
+			<if test="project != null and project.id != null">
+				PROJECT_id=#{project.id},
+			</if>
+		</set>
+		WHERE id=#{id}
+	</update>
+	<sql id="selectClause">
+		SELECT A.ID WID,A.CODE WCODE,A.NAME WNAME,A.TYPE WTYPE,A.ENABLE WENABLE,
+			A.VISIBLE WVISIBLE,A.POSITION_X WPOSITION_X,A.POSITION_Y WPOSITION_Y,
+			A.WIDTH WWIDTH,A.HEIGHT WHEIGHT,
+			B.ID PID,B.CODE PCODE,B.NAME PNAME
+	</sql>
+	<sql id="tableClause">
+		FROM T_WIDGET A
+		INNER JOIN T_PROJECT B ON A.PROJECT_id=B.id
+	</sql>
+	<sql id="deepSelectClause">
+		SELECT A.ID WID,A.CODE WCODE,A.NAME WNAME,A.TYPE WTYPE,A.ENABLE WENABLE,
+			A.VISIBLE WVISIBLE,A.POSITION_X WPOSITION_X,A.POSITION_Y WPOSITION_Y,
+			A.WIDTH WWIDTH,A.HEIGHT WHEIGHT,B.ID PID,B.CODE PCODE,B.NAME PNAME,
+			V.id VID,V.CODE VCODE,V.NAME VNAME,V.VALUE VVALUE,V.UNIT VUNIT,V.TYPE VTYPE,
+			V.AIM VAIM,I.id IID,I.VI_KEY IKEY, I.VI_VALUE IVALUE
+	</sql>
+	<sql id="deepQueryTableClause">
+		FROM T_WIDGET A
+		INNER JOIN T_PROJECT B ON A.PROJECT_id=B.id
+		LEFT JOIN T_VARIABLE V ON A.id=V.WIDGET_id
+		LEFT JOIN T_VALUE_ITEM I ON V.id=I.VARIABLE_id
+	</sql>
+	<sql id="whereClause">
+		<where>
+			<choose>
+				<when test="id != null">
+					AND A.id=#{id}
+				</when>
+				<when test="code != null and code != ''">
+					AND A.CODE=#{code}
+				</when>
+				<otherwise>
+					<if test="name != null and name != ''">
+						AND A.NAME LIKE CONCAT('%', #{name}, '%')
+					</if>
+					<if test="type != null">
+						AND A.TYPE=#{type}
+					</if>
+					<if test="enable != null">
+						AND A.ENABLE=#{enable}
+					</if>
+					<if test="visible != null">
+						AND A.VISIBLE=#{visible}
+					</if>
+					<if test="positionX != null">
+						AND A.POSITION_X=#{positionX}
+					</if>
+					<if test="positionY != null">
+						AND A.POSITION_Y=#{positionY}
+					</if>
+					<if test="width != null">
+						AND A.WIDTH=#{width}
+					</if>
+					<if test="height != null">
+						AND A.HEIGHT=#{height}
+					</if>
+					<if test="project_id != null">
+						AND A.PROJECT_id=#{project_id}
+					</if>
+				</otherwise>
+			</choose>
+		</where>
+	</sql>
+	<select id="getAllWidgets" resultMap="getWidgetsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+	</select>
+	<select id="getTableCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(1)
+		<include refid="tableClause" />
+		<include refid="whereClause" />
+	</select>
+	<select id="getWidgets" parameterType="map" resultMap="getWidgetsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		<include refid="whereClause" />
+		<include refid="dao.PagingDao.paging" />
+	</select>
+	<select id="getWidgetInfo" parameterType="map" resultMap="getDeepWidgetMap">
+		<include refid="deepSelectClause" />
+		<include refid="deepQueryTableClause" />
+		<include refid="whereClause" />
+	</select>
+	<select id="getWidgetInfoById" parameterType="map" resultMap="getDeepWidgetMap">
+		<include refid="deepSelectClause" />
+		<include refid="deepQueryTableClause" />
+		WHERE A.id=#{id}
+	</select>
+	<select id="getWidgetById" parameterType="Long" resultMap="getWidgetsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		WHERE A.id=#{id}
+	</select>
+	<select id="getWidgetByCode" parameterType="map" resultMap="getWidgetsMap">
+		<include refid="selectClause" />
+		<include refid="tableClause" />
+		WHERE A.PROJECT_id=#{projectId} AND A.CODE=#{code}
+	</select>
+	<resultMap id="getWidgetsMap" type="Widget">
+		<id property="id" column="WID" />
+		<result property="code" column="WCODE" />
+		<result property="name" column="WNAME" />
+		<result property="type" column="WTYPE" />
+		<result property="enable" column="WENABLE" />
+		<result property="visible" column="WVISIBLE" />
+		<result property="positionX" column="WPOSITION_X" />
+		<result property="positionY" column="WPOSITION_Y" />
+		<result property="width" column="WWIDTH" />
+		<result property="height" column="WHEIGHT" />
+		<association property="project" javaType="Project">
+			<id property="id" column="PID" />
+			<result property="code" column="PCODE" />
+			<result property="name" column="PNAME" />
+		</association>
+	</resultMap>
+	<resultMap id="getDeepWidgetMap" type="Widget">
+		<id property="id" column="WID" />
+		<result property="code" column="WCODE" />
+		<result property="name" column="WNAME" />
+		<result property="type" column="WTYPE" />
+		<result property="enable" column="WENABLE" />
+		<result property="visible" column="WVISIBLE" />
+		<result property="positionX" column="WPOSITION_X" />
+		<result property="positionY" column="WPOSITION_Y" />
+		<result property="width" column="WWIDTH" />
+		<result property="height" column="WHEIGHT" />
+		<association property="project" javaType="Project">
+			<id property="id" column="PID" />
+			<result property="code" column="PCODE" />
+			<result property="name" column="PNAME" />
+		</association>
+		<collection property="variables" ofType="Variable">
+			<id property="id" column="VID" />
+			<result property="code" column="VCODE" />
+			<result property="name" column="VNAME" />
+			<result property="value" column="VVALUE" />
+			<result property="unit" column="VUNIT" />
+			<result property="type" column="VTYPE" />
+			<result property="aim" column="VAIM" />
+			<collection property="valueItems" ofType="ValueItem">
+				<id property="id" column="IID" />
+				<result property="key" column="IKEY" />
+				<result property="value" column="IVALUE" />
+			</collection>
+		</collection>
+	</resultMap>
+</mapper>
