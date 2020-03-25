@@ -404,7 +404,7 @@ public class Instance
                 @Override
                 public Object call(Object... o)
                 {
-//                    System.out.println("delivery completed!");
+                    System.out.println("delivery completed!");
                     return null;
                 }
             };
